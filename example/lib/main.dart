@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:flutter_datetime_picker/DateSlotPick.dart';
 
 void main() => runApp(new MyApp());
 
@@ -104,24 +105,26 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             FlatButton(
                 onPressed: () {
-                  DatePicker.showDatePicker(context,
+                  DateSlotPick.showDatePicker(context,
                       showTitleActions: true,
                       minTime: DateTime(2018, 3, 5),
                       maxTime: DateTime.now(),
                       theme: DatePickerTheme(
                           headerColor: Colors.orange,
-                          backgroundColor: Colors.blue,
+                          backgroundColor: Colors.white,
                           itemStyle: TextStyle(
-                              color: Colors.white,
+                              color: Color(0xff276cfe),
                               fontWeight: FontWeight.bold,
-                              fontSize: 18),
+                              fontSize: 16),
+                          cancelStyle:
+                              TextStyle(color: Colors.white, fontSize: 18),
                           doneStyle:
-                              TextStyle(color: Colors.white, fontSize: 16)),
+                              TextStyle(color: Colors.white, fontSize: 18)),
                       onChanged: (date) {
                     print('change $date in time zone ' +
                         date.timeZoneOffset.inHours.toString());
-                  }, onConfirm: (date) {
-                    print('confirm $date');
+                  }, onConfirm: (date, end) {
+                    print('confirm $date-$end');
                   }, currentTime: DateTime.now(), locale: LocaleType.zh);
                 },
                 child: Text(

@@ -14,6 +14,7 @@ export 'package:flutter_datetime_picker/src/i18n_model.dart';
 typedef DateChangedCallback(DateTime time);
 typedef DateCancelledCallback();
 typedef String StringAtIndexCallBack(int index);
+typedef int StringAtIndexCallBackSelect();
 typedef DateResultCallback(String startTime, String endTime);
 
 class DateSlotPick {
@@ -186,6 +187,9 @@ class _DatePickerState extends State<_DatePickerComponent> {
               ),
               child: GestureDetector(
                 child: Material(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8)),
                   color: theme.backgroundColor ?? Colors.white,
                   child: _renderPickerView(theme),
                 ),
@@ -226,6 +230,7 @@ class _DatePickerState extends State<_DatePickerComponent> {
     ValueKey key,
     DatePickerTheme theme,
     StringAtIndexCallBack stringAtIndexCB,
+    StringAtIndexCallBackSelect boolSelect,
     ScrollController scrollController,
     int layoutProportion,
     ValueChanged<int> selectedChangedWhenScrolling,
@@ -260,15 +265,24 @@ class _DatePickerState extends State<_DatePickerComponent> {
             useMagnifier: true,
             itemBuilder: (BuildContext context, int index) {
               final content = stringAtIndexCB(index);
+              var isSelect = boolSelect() == index;
+              if (isSelect == null) {
+                isSelect = false;
+              }
               if (content == null) {
                 return null;
               }
+
               return Container(
                 height: theme.itemHeight,
                 alignment: Alignment.center,
                 child: Text(
                   content,
-                  style: theme.itemStyle,
+                  style: isSelect
+                      ? theme.itemStyle
+                      : TextStyle(
+                          color: Colors.grey,
+                          fontSize: theme.itemStyle.fontSize),
                   textAlign: TextAlign.start,
                 ),
               );
@@ -291,6 +305,7 @@ class _DatePickerState extends State<_DatePickerComponent> {
                     ValueKey(widget.pickerModel.currentLeftIndex()),
                     theme,
                     widget.pickerModel.leftStringAtIndex,
+                    widget.pickerModel.currentLeftIndex,
                     leftScrollCtrl,
                     widget.pickerModel.layoutProportions()[0], (index) {
                     widget.pickerModel.setLeftIndex(index);
@@ -312,6 +327,7 @@ class _DatePickerState extends State<_DatePickerComponent> {
                     ValueKey(widget.pickerModel.currentLeftIndex()),
                     theme,
                     widget.pickerModel.middleStringAtIndex,
+                    widget.pickerModel.currentMiddleIndex,
                     middleScrollCtrl,
                     widget.pickerModel.layoutProportions()[1], (index) {
                     widget.pickerModel.setMiddleIndex(index);
@@ -334,6 +350,7 @@ class _DatePickerState extends State<_DatePickerComponent> {
                         widget.pickerModel.currentLeftIndex()),
                     theme,
                     widget.pickerModel.rightStringAtIndex,
+                    widget.pickerModel.currentRightIndex,
                     rightScrollCtrl,
                     widget.pickerModel.layoutProportions()[2], (index) {
                     widget.pickerModel.setRightIndex(index);
@@ -354,7 +371,6 @@ class _DatePickerState extends State<_DatePickerComponent> {
     DatePickerTheme theme,
   ) {
     return Container(
-      height: theme.titleHeight,
       child: Column(
         children: [
           Container(
@@ -362,31 +378,37 @@ class _DatePickerState extends State<_DatePickerComponent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
+                  alignment: Alignment.center,
                   height: theme.titleHeight,
                   child: Text(
                     '自定义时段',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: theme.titleHeight,
+                      fontSize: theme.itemStyle.height,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                Container(
-                  height: 25,
-                  width: 40,
-                  child: Icon(
-                    Icons.close,
+                GestureDetector(
+                  onTap: () {
+                    /// print("qux ");
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    child: Icon(
+                      Icons.close,
+                    ),
                   ),
-                ),
+                )
               ],
             ),
           ),
           Divider(
-            color: Color(0xffF0EFEF),
+            color: Colors.grey,
             height: 0.5,
           ),
           Container(
+            color: theme.itemStyle.backgroundColor,
             margin: EdgeInsets.all(5),
             decoration: BoxDecoration(
                 color: Color(0xFFF3F6FA),
@@ -395,30 +417,25 @@ class _DatePickerState extends State<_DatePickerComponent> {
               //mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  margin: EdgeInsets.only(left: 10, right: 8),
+                  alignment: Alignment.center,
+                  height: 30,
+                  width: 80,
+                  // margin: EdgeInsets.only(left: 10, right: 8),
                   child: Text(
                     "查询时间",
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: theme.itemHeight,
+                      fontSize: theme.itemStyle.fontSize * 0.8,
                     ),
                   ),
                 ),
-                Container(
-                  margin: EdgeInsets.only(right: 8),
-                  child: TextField(
-                      focusNode: FocusNode(
-                          skipTraversal: false,
-                          canRequestFocus: false,
-                          descendantsAreFocusable: false),
-                      maxLines: 1,
+                Expanded(
+                  child: GestureDetector(
                       onTap: () {
-                        // startDate = widget.pickerModel
-                        //     .finalTime()
-                        //     .toIso8601String()
-                        //     .split("T")[0];
+                        setState(() {
+                          type = 0;
+                        });
                         if (startDate != null) {
-                          // DateTime.f
                           setState(() {
                             widget.pickerModel = DatePickerModel(
                                 maxTime: DateTime.now(),
@@ -428,70 +445,86 @@ class _DatePickerState extends State<_DatePickerComponent> {
                           });
                         }
                       },
-                      // enabled: false,
-                      style: TextStyle(
-                        color: Color(0xff9eb7fd),
-                        fontSize: theme.itemHeight,
-                      ),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                            borderSide:
-                                const BorderSide(color: Colors.orangeAccent),
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(3))),
-                      ))
-                    ..controller.text = startDate ?? "",
+                      child: Container(
+                          alignment: Alignment.center,
+                          height: 25,
+                          width: 80,
+                          // margin: EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                              border: Border.all(
+                                color: type == 0
+                                    ? Colors.orangeAccent
+                                    : Colors.grey,
+                                width: 1,
+                              ),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(3))),
+                          child: Text(
+                            startDate == null
+                                ? ""
+                                : startDate.toIso8601String().split("T")[0],
+                            style: TextStyle(
+                              color: Color(0xff276cfe),
+                              fontSize: theme.itemStyle.fontSize * 0.9,
+                            ),
+                          ))),
                 ),
                 Container(
-                  margin: EdgeInsets.only(left: 8, right: 8),
+                  alignment: Alignment.center,
+                  height: 30,
+                  width: 20,
+                  //margin: EdgeInsets.only(left: 8, right: 8),
                   child: Text(
                     "-",
                     style: TextStyle(
-                      color: Color(0xfff0efef),
-                      fontSize: theme.itemHeight,
+                      color: Color(0xff005566),
+                      fontSize: theme.itemStyle.fontSize * 0.6,
                     ),
                   ),
                 ),
-                Container(
-                  margin: EdgeInsets.only(right: 8),
-                  child: TextField(
-                      onTap: () {
-                        setState(() {
-                          if (startDate != null && endDate == null) {
-                            widget.pickerModel = DatePickerModel(
-                                maxTime: DateTime.now(),
-                                minTime: startDate,
-                                currentTime: startDate,
-                                locale: LocaleType.zh);
-                          } else if (startDate != null && endDate != null) {
-                            widget.pickerModel = DatePickerModel(
-                                maxTime: DateTime.now(),
-                                minTime: startDate,
-                                currentTime: endDate,
-                                locale: LocaleType.zh);
-                          }
-                        });
-                      },
-                      focusNode: FocusNode(
-                          skipTraversal: false,
-                          canRequestFocus: false,
-                          descendantsAreFocusable: false),
-                      maxLines: 1,
-
-                      // enabled: false,
-                      style: TextStyle(
-                        color: Color(0xff9eb7fd),
-                        fontSize: theme.itemHeight,
-                      ),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                            borderSide:
-                                const BorderSide(color: Colors.orangeAccent),
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(3))),
-                      ))
-                    ..controller.text = endDate ?? "",
-                ),
+                Expanded(
+                    child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            type = 1;
+                            if (startDate != null && endDate == null) {
+                              widget.pickerModel = DatePickerModel(
+                                  maxTime: DateTime.now(),
+                                  minTime: startDate,
+                                  currentTime: startDate,
+                                  locale: LocaleType.zh);
+                            } else if (startDate != null && endDate != null) {
+                              widget.pickerModel = DatePickerModel(
+                                  maxTime: DateTime.now(),
+                                  minTime: startDate,
+                                  currentTime: endDate,
+                                  locale: LocaleType.zh);
+                            }
+                          });
+                        },
+                        child: Container(
+                            alignment: Alignment.center,
+                            height: 25,
+                            width: 100,
+                            margin: EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: type != 0
+                                      ? Colors.orangeAccent
+                                      : Colors.grey,
+                                  width: 1,
+                                ),
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(3))),
+                            child: Text(
+                              endDate == null
+                                  ? ""
+                                  : endDate.toIso8601String().split("T")[0],
+                              style: TextStyle(
+                                color: Color(0xff276cfe),
+                                fontSize: theme.itemStyle.fontSize * 0.9,
+                              ),
+                            )))),
               ],
             ),
           )
@@ -521,14 +554,15 @@ class _DatePickerState extends State<_DatePickerComponent> {
         children: <Widget>[
           Expanded(
             child: Container(
+              color: Color(0xffe9f3ff),
               height: theme.titleHeight,
               child: CupertinoButton(
                 pressedOpacity: 0.3,
                 color: theme.cancelStyle.backgroundColor,
-                // padding: EdgeInsets.only(left: 16, top: 0),
+                padding: EdgeInsets.all(6),
                 child: Text(
                   '$cancel',
-                  style: theme.cancelStyle,
+                  style: TextStyle(color: Color(0xff2167fd), fontSize: 16),
                 ),
                 onPressed: () {
                   Navigator.pop(context);
@@ -541,17 +575,16 @@ class _DatePickerState extends State<_DatePickerComponent> {
           ),
           Expanded(
             child: Container(
+              color: Color(0xff276cfe),
               height: theme.titleHeight,
               child: CupertinoButton(
                 pressedOpacity: 0.3,
-                padding: EdgeInsets.only(right: 16, top: 0),
+                padding: EdgeInsets.all(6),
                 child: Text(
                   '$done',
                   style: theme.doneStyle,
                 ),
                 onPressed: () {
-                  // endDate =
-                  // widget.pickerModel.finalTime().toIso8601String().split("T")[0];
                   if (startDate != null && endDate != null) {
                     //context.
                     Navigator.pop(context, widget.pickerModel.finalTime());
@@ -598,21 +631,23 @@ class _BottomPickerLayout extends SingleChildLayoutDelegate {
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
     double maxHeight = theme.containerHeight;
     if (showTitleActions) {
-      maxHeight += theme.titleHeight;
+      maxHeight += theme.titleHeight * 3 - 3.1;
     }
 
     return BoxConstraints(
       minWidth: constraints.maxWidth,
       maxWidth: constraints.maxWidth,
       minHeight: 0.0,
-      maxHeight: maxHeight + bottomPadding,
+      maxHeight: maxHeight,
     );
   }
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     final height = size.height - childSize.height * progress;
-    return Offset(0.0, height);
+    //MediaQuery.of(c)
+
+    return Offset(0.0, height * 0.5);
   }
 
   @override
